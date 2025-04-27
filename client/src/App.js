@@ -1,22 +1,14 @@
 import React, { useContext } from "react";
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
-import { AuthContext } from "./context/authContext";
+import { AuthContext } from "./context/authContext.jsx";
+import Layout from "./components/layout/Layout"; // Imported Layout component
 
 function App() {
   const { currentUser } = useContext(AuthContext);
-
-  const Layout = () => {
-    return (
-      <div className="layout">
-        {/* Your navigation and layout structure would go here */}
-        <Outlet />
-      </div>
-    );
-  };
 
   const ProtectedRoute = ({ children }) => {
     if (!currentUser) {
@@ -54,11 +46,7 @@ function App() {
     },
   ]);
 
-  return (
-    <div>
-      <RouterProvider router={router} />
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
