@@ -32,9 +32,9 @@ const Register = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="flex flex-col md:flex-row w-full max-w-5xl shadow-lg bg-white rounded-lg overflow-hidden">
         <div className="flex-1 p-8 bg-purple-600 text-white flex flex-col justify-center">
-          <h1 className="text-4xl font-bold mb-4">Energize.</h1>
+          <h1 className="text-4xl font-bold mb-4">Travelz.</h1>
           <p className="mb-6">
-            Join our vibrant community dedicated to sharing fitness tips, workout routines, healthy recipes, and inspirational stories.
+          Connect with travelers worldwide. Share your adventures and learn from others.
           </p>
           <span className="mb-2">Do you have an account?</span>
           <Link to="/login">

@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../context/authContext";
+import { AuthContext } from "../context/authContext.jsx";
 import { app } from "../firebase";
 import { 
   getAuth, 
@@ -79,9 +79,9 @@ const Login = () => {
       <div className="flex flex-col md:flex-row w-full max-w-5xl bg-white shadow-lg rounded-lg overflow-hidden">
         
         <div className="flex-1 p-8 bg-purple-600 text-white flex flex-col justify-center">
-          <h1 className="text-4xl font-bold mb-4">Energize</h1>
+          <h1 className="text-4xl font-bold mb-4">Trvelz</h1>
           <p className="mb-6">
-            Welcome to FitnessConnect, your ultimate destination for connecting with fellow fitness enthusiasts!
+          Connect with travelers worldwide. Share your adventures and learn from others.
           </p>
           <span className="mb-2">Don't have an account?</span>
           <Link to="/register">
@@ -119,14 +119,12 @@ const Login = () => {
             </button>
 
             <button 
-              type="button" 
-              onClick={handleGoogleSignIn} 
-              className="flex items-center justify-center border py-3 rounded hover:bg-gray-100"
-            >
-              <img src={GoogleLogo} alt="Google logo" className="w-6 h-6 mr-3" />
-              Sign in with Google
-            </button>
-
+  type="button" 
+  onClick={handleGoogleSignIn} 
+  className="flex items-center justify-center border py-3 rounded hover:bg-gray-100"
+>
+  Sign in with Google
+</button>
             <button 
               type="button" 
               onClick={handleFacebookSignIn} 
