@@ -1,14 +1,9 @@
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-  Outlet
-} from "react-router-dom";
+import React, { useContext } from "react";
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Profile from "./pages/Profile.jsx";
-import { useContext } from "react";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import { AuthContext } from "./context/authContext";
 
 function App() {
