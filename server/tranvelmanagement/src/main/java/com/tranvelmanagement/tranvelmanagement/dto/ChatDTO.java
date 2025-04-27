@@ -1,7 +1,5 @@
 package com.tranvelmanagement.tranvelmanagement.dto;
 
-import com.tranvelmanagement.tranvelmanagement.model.Message;
-import com.tranvelmanagement.tranvelmanagement.model.User;
 import lombok.Data;
 
 import java.time.LocalDateTime;

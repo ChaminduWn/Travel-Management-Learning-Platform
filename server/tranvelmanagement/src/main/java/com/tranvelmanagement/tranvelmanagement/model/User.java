@@ -13,6 +13,7 @@ public class User {
     private String username;
     private String password;
     private String email;
+    private String pic;       // This field should exist in User if needed
 
-    // Constructors, getters, and setters
+
 }
