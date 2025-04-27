@@ -17,7 +17,10 @@ public class MessageService {
     
     @Autowired
     private MessageRepository messageRepository;
-    
+
+    @Autowired
+    private WebSocketService websocketService;
+        
     @Autowired
     private ChatRepository chatRepository;
     
@@ -46,10 +49,13 @@ public class MessageService {
         message.setCreatedAt(LocalDateTime.now());
         message.setUpdatedAt(LocalDateTime.now());
         
+        
         Message savedMessage = messageRepository.save(message);
         
         // Update the chat with latest message
         chatService.updateLatestMessage(chat, savedMessage);
+
+        webSocketService.sendMessage(dtoConverter.convertToDTO(savedMessage));
         
         return savedMessage;
     }
