@@ -1,6 +1,5 @@
 package com.tranvelmanagement.tranvelmanagement.service;
 
-import com.tranvelmanagement.tranvelmanagement.dto.ChatDTO;
 import com.tranvelmanagement.tranvelmanagement.model.Chat;
 import com.tranvelmanagement.tranvelmanagement.model.Message;
 import com.tranvelmanagement.tranvelmanagement.model.User;
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
@@ -37,7 +35,7 @@ public class ChatService {
         
         Chat newChat = new Chat();
         newChat.setChatName("sender");
-        newChat.setIsGroupChat(false);
+        newChat.setGroupChat(false);
         
         List<User> users = new ArrayList<>();
         users.add(currentUser);
@@ -59,7 +57,14 @@ public class ChatService {
             throw new IllegalArgumentException("Please provide all required fields and include at least 2 users");
         }
         
-        List<User> users = userRepository.findAllById(userIds);
+        List<User> users = new ArrayList<>();
+        for (String id : userIds) {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isPresent()) {
+                users.add(userOpt.get());
+            }
+        }
+        
         if (users.size() != userIds.size()) {
             throw new ResourceNotFoundException("One or more users not found");
         }
@@ -69,7 +74,7 @@ public class ChatService {
         Chat groupChat = new Chat();
         groupChat.setChatName(name);
         groupChat.setUsers(users);
-        groupChat.setIsGroupChat(true);
+        groupChat.setGroupChat(true);
         groupChat.setGroupAdmin(currentUser);
         groupChat.setCreatedAt(LocalDateTime.now());
         groupChat.setUpdatedAt(LocalDateTime.now());

@@ -1,10 +1,10 @@
 package com.tranvelmanagement.tranvelmanagement.controller;
 
+import com.tranvelmanagement.tranvelmanagement.dto.ApiResponse;
 import com.tranvelmanagement.tranvelmanagement.dto.MessageDTO;
+import com.tranvelmanagement.tranvelmanagement.dto.request.SendMessageRequest;
 import com.tranvelmanagement.tranvelmanagement.model.Message;
 import com.tranvelmanagement.tranvelmanagement.model.User;
-import com.tranvelmanagement.tranvelmanagement.payload.ApiResponse;
-import com.tranvelmanagement.tranvelmanagement.dto.request.SendMessageRequest;
 import com.tranvelmanagement.tranvelmanagement.service.MessageService;
 import com.tranvelmanagement.tranvelmanagement.util.DTOConverter;
 import org.springframework.beans.factory.annotation.Autowired;

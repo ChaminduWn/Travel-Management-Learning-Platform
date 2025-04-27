@@ -46,7 +46,11 @@ public class DTOConverter {
         
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setId(message.getId());
-        messageDTO.setSender(convertToDTO(message.getSender()));
+        
+        if (message.getSender() != null) {
+            messageDTO.setSender(convertToDTO(message.getSender()));
+        }
+        
         messageDTO.setContent(message.getContent());
         
         if (message.getChat() != null) {
@@ -70,9 +74,8 @@ public class DTOConverter {
         
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
-        userDTO.setName(user.getName());
+        userDTO.setUsername(user.getUsername());
         userDTO.setEmail(user.getEmail());
-        // Set profile picture or other necessary fields
         userDTO.setPic(user.getPic());
         
         return userDTO;
