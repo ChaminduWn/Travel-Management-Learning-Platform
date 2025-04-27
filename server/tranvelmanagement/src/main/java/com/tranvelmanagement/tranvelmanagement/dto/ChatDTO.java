@@ -1,14 +1,14 @@
-package com.tranvelmanagement.tranvelmanagement.dto.request;
+package com.tranvelmanagement.tranvelmanagement.dto;
 
-package com.tranvelmanagement.tranvelmanagement.model.Message;
-package com.tranvelmanagement.tranvelmanagement.model.User;
+import com.tranvelmanagement.tranvelmanagement.model.Message;
+import com.tranvelmanagement.tranvelmanagement.model.User;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class ChatRequest {
+public class ChatDTO {
     private String id;
     private String chatName;
     private boolean isGroupChat;
