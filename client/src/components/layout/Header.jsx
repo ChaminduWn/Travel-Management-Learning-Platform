@@ -150,14 +150,14 @@ const Header = () => {
                 Home
               </Link>
               <Link
-                to="/trip-plans"
+                to="/"
                 className="flex items-center px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                 onClick={toggleMenu}
               >
                 Trip Plans
               </Link>
               <Link
-                to="/destinations"
+                to="/"
                 className="flex items-center px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                 onClick={toggleMenu}
               >
@@ -190,7 +190,7 @@ const Header = () => {
                     Your Profile
                   </Link>
                   <Link
-                    to="/settings"
+                    to="/"
                     className="block px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                     onClick={toggleMenu}
                   >
