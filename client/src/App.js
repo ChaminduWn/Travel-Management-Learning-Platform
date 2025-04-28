@@ -6,6 +6,7 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import { AuthContext } from "./context/authContext.jsx";
 import Layout from "./components/layout/Layout"; // Imported Layout component
+import Chatpage from "./pages/ChatPage.jsx";
 
 function App() {
   const { currentUser } = useContext(AuthContext);
@@ -33,6 +34,10 @@ function App() {
         {
           path: "/profile",
           element: <Profile />,
+        },
+        {
+          path: "/chats",
+          element: <Chatpage />,
         },
       ],
     },
