@@ -72,7 +72,7 @@ const Profile = () => {
       }
 
       const response = await axios.put(
-        `http://localhost:8080/api/users/${currentUser.id}`,
+        `http://localhost:8087/api/users/${currentUser.id}`,
         updateData,
         {
           headers: {

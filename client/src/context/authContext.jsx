@@ -24,23 +24,51 @@ export const AuthContextProvider = ({ children }) => {
   const login = async (username, password) => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:8080/api/login", {
+      const res = await axios.post("http://localhost:8087/api/login", {
         username,
         password,
       });
       
+      // Check if response contains data
+      if (!res.data) {
+        throw new Error("No data received from server");
+      }
+      
       // Set the user in state and localStorage
-      setCurrentUser(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
+      const userData = res.data;
       
-      // Normally, the token would come from the server's response
-      // For now, let's assume we need to generate one or get it from the user object
-      const token = res.data.token || "sample-token"; // Replace with actual token from response
-      setToken(token);
-      localStorage.setItem("token", token);
+      // Check if the token is in the response
+      let tokenFromResponse;
       
-      return res.data;
+      if (userData.token) {
+        // If token is directly in the user object
+        tokenFromResponse = userData.token;
+      } else if (res.data.token) {
+        // If token is in the response but not in the user object
+        tokenFromResponse = res.data.token;
+        userData.token = tokenFromResponse; // Add token to user object for consistency
+      }
+      
+      if (tokenFromResponse) {
+        // Store token
+        setToken(tokenFromResponse);
+        localStorage.setItem("token", tokenFromResponse);
+        
+        // Set default Authorization header for future requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${tokenFromResponse}`;
+        
+        console.log("Token stored in localStorage:", tokenFromResponse);
+      } else {
+        console.warn("No token received from server during login");
+      }
+      
+      // Store user data after ensuring token is included
+      setCurrentUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      
+      return userData;
     } catch (error) {
+      console.error("Login error:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -50,7 +78,7 @@ export const AuthContextProvider = ({ children }) => {
   const register = async (username, email, password) => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:8080/api/register", {
+      const res = await axios.post("http://localhost:8087/api/register", {
         username,
         email,
         password,
@@ -64,10 +92,18 @@ export const AuthContextProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear user and token from state
     setCurrentUser(null);
     setToken(null);
+    
+    // Clear localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    
+    // Remove Authorization header
+    delete axios.defaults.headers.common['Authorization'];
+    
+    console.log("User logged out, token and user data cleared");
   };
 
   const updateUser = (userData) => {
@@ -77,10 +113,11 @@ export const AuthContextProvider = ({ children }) => {
 
   useEffect(() => {
     // Set up axios interceptors for authentication headers
-    axios.interceptors.request.use(
+    const interceptor = axios.interceptors.request.use(
       (config) => {
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        const currentToken = localStorage.getItem("token");
+        if (currentToken) {
+          config.headers.Authorization = `Bearer ${currentToken}`;
         }
         return config;
       },
@@ -88,12 +125,31 @@ export const AuthContextProvider = ({ children }) => {
         return Promise.reject(error);
       }
     );
-  }, [token]);
+
+    // Handle token expiration or unauthorized responses
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          // Token expired or invalid, logout user
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Clean up interceptors on unmount
+    return () => {
+      axios.interceptors.request.eject(interceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
+        token,
         loading,
         login,
         register,
@@ -105,3 +161,5 @@ export const AuthContextProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export default AuthContextProvider;
