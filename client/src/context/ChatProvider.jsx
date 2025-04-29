@@ -7,16 +7,19 @@ const ChatProvider = ({ children }) => {
   const [selectedChat, setSelectedChat] = useState();
   const [user, setUser] = useState();
   const [notification, setNotification] = useState([]);
-  const [chats, setChats] = useState();
+  const [chats, setChats] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    // Use the same key as your AuthContext to ensure consistency
+    const userInfo = JSON.parse(localStorage.getItem("user"));
     setUser(userInfo);
 
-    if (!userInfo) navigate("/");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only redirect if we're on a protected chat route
+    if (!userInfo && window.location.pathname.includes("/chats")) {
+      navigate("/login");
+    }
   }, [navigate]);
 
   return (
@@ -38,7 +41,11 @@ const ChatProvider = ({ children }) => {
 };
 
 export const ChatState = () => {
-  return useContext(ChatContext);
+  const context = useContext(ChatContext);
+  if (context === undefined) {
+    throw new Error("ChatState must be used within a ChatProvider");
+  }
+  return context;
 };
 
 export default ChatProvider;

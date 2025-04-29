@@ -8,6 +8,15 @@ const Chatpage = () => {
   const [fetchAgain, setFetchAgain] = useState(false);
   const { user } = ChatState();
 
+  // If user is not yet loaded, show a loading indicator
+  if (user === undefined) {
+    return (
+      <div className="flex items-center justify-center w-full h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {user && <SideDrawer />}

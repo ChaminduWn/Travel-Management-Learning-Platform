@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { app } from "../firebase";
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider 
+} from "firebase/auth";
+import { useAuth } from '../context/authContext';
+// import GoogleLogo from "../assets/google.png";
+// import FacebookLogo from "../assets/facebook.png"
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +20,15 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const auth = getAuth(app);
+  const { login, currentUser } = useAuth(); // Using the login function from AuthContext
+
+  // Add effect to check if user is logged in and redirect
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,18 +43,92 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8087/api/login', formData);
+      // Use the login function from AuthContext
+      const userData = await login(formData.username, formData.password);
       
-      if (response.data) {
-        // Store user info in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data));
-        
-        // Redirect to dashboard or home page
-        navigate('/profile');
+      // Check if login was successful
+      if (userData) {
+        // No need to navigate here, the useEffect will handle it
+        console.log("Login successful", userData);
       }
     } catch (err) {
-      setError(err.response?.data || 'Invalid username or password');
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || 'Invalid username or password');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveFirebaseUserToBackend = async (firebaseUser) => {
+    try {
+      // First, check if user already exists with that email
+      const username = firebaseUser.displayName || firebaseUser.email.split('@')[0];
+      
+      // Try to login with Firebase credentials
+      const response = await axios.post("http://localhost:8087/api/firebase-login", {
+        username: username,
+        email: firebaseUser.email,
+        firebaseId: firebaseUser.uid,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL
+      });
+      
+      if (response.status === 200 && response.data) {
+        const user = response.data;
+        
+        // Store user info and token in localStorage
+        localStorage.setItem('user', JSON.stringify(user));
+        if (user.token) {
+          localStorage.setItem('token', user.token);
+          // Set default Authorization header for future requests
+          axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+          
+          // Log to verify token is being saved
+          console.log("Token saved to localStorage:", user.token);
+        } else {
+          console.warn("No token received from Firebase login");
+        }
+        
+        // No need to navigate here, the useEffect will handle it
+      }
+    } catch (error) {
+      console.error("Error logging in with Firebase:", error);
+      setError("Failed to login with social account. Please try again.");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Save Firebase user to backend / login
+      await saveFirebaseUserToBackend(user);
+    } catch (error) {
+      console.error("Google login error:", error);
+      setError("Google login failed. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setError('');
+    setLoading(true);
+    const provider = new FacebookAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Save Firebase user to backend / login
+      await saveFirebaseUserToBackend(user);
+    } catch (error) {
+      console.error("Facebook login error:", error);
+      setError("Facebook login failed. Please try again.");
       setLoading(false);
     }
   };
@@ -63,9 +156,6 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="username" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg> */}
                 Username
               </label>
               <input
@@ -81,9 +171,6 @@ const Login = () => {
             
             <div className="space-y-2">
               <label htmlFor="password" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg> */}
                 Password
               </label>
               <input
@@ -134,6 +221,32 @@ const Login = () => {
               ) : (
                 'Sign In'
               )}
+            </button>
+            
+            <div className="my-2 text-center">
+              <span className="text-gray-400">Or login with</span>
+            </div>
+            
+            <button 
+              type="button" 
+              onClick={handleGoogleSignIn} 
+              className="flex items-center justify-center w-full px-4 py-3 text-gray-800 transition-all duration-300 bg-white rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+            >
+              {/* <img src={GoogleLogo} alt="Google" className="w-5 h-5 mr-2" /> */}
+              <span className="mr-2">GOOGLE</span>
+              Sign in with Google
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleFacebookSignIn} 
+              className="flex items-center justify-center w-full px-4 py-3 text-white transition-all duration-300 bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+            >
+              {/* <img src={FacebookLogo} alt="Facebook" className="w-5 h-5 mr-2" /> */}
+              <span className="mr-2">facebook</span>
+              Sign in with Facebook
             </button>
             
             <div className="mt-6 text-center">

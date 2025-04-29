@@ -6,7 +6,7 @@ import { useAuth } from '../../context/authContext';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { user, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const toggleMenu = () => {
@@ -19,6 +19,11 @@ const Header = () => {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
       setSearchQuery('');
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -66,26 +71,29 @@ const Header = () => {
 
           {/* User Actions */}
           <div className="items-center hidden space-x-4 md:flex">
-            {user ? (
+            {currentUser ? (
               <div className="flex items-center space-x-4">
                 <button className="relative text-gray-700 hover:text-blue-600">
                   <Bell className="w-5 h-5" />
                   <span className="absolute w-3 h-3 bg-red-500 rounded-full -top-1 -right-1"></span>
                 </button>
                 <div className="relative group">
-                  <Link to={`/profile/${user.id}`} className="block">
+                  <Link to={`/profile/${currentUser.id}`} className="block">
                     <div className="relative w-8 h-8 overflow-hidden bg-gray-100 rounded-full ring-2 ring-gray-200">
-                      {user.pic ? (
-                        <img src={user.pic} alt={user.username} className="object-cover w-full h-full" />
+                      {currentUser.photoURL ? (
+                        <img src={currentUser.photoURL} alt={currentUser.username} className="object-cover w-full h-full" />
                       ) : (
                         <User className="absolute w-5 h-5 text-gray-500 transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" />
                       )}
                     </div>
                   </Link>
                   <div className="absolute right-0 z-10 hidden w-48 py-1 mt-2 bg-white border border-gray-200 rounded-md shadow-lg group-hover:block">
-                    <Link to={`/profile/${user.id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</Link>
+                    <div className="px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-100">
+                      {currentUser.username || currentUser.displayName}
+                    </div>
+                    <Link to={`/profile/${currentUser.id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</Link>
                     <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</Link>
-                    <button onClick={logout} className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100">
+                    <button onClick={handleLogout} className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100">
                       Sign out
                     </button>
                   </div>
@@ -150,14 +158,14 @@ const Header = () => {
                 Home
               </Link>
               <Link
-                to="/"
+                to="/trip-plans"
                 className="flex items-center px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                 onClick={toggleMenu}
               >
                 Trip Plans
               </Link>
               <Link
-                to="/"
+                to="/destinations"
                 className="flex items-center px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                 onClick={toggleMenu}
               >
@@ -167,30 +175,30 @@ const Header = () => {
             
             {/* Mobile User Actions */}
             <div className="pt-2 border-t border-gray-200">
-              {user ? (
+              {currentUser ? (
                 <div className="space-y-2">
                   <div className="flex items-center px-3 py-2 space-x-3">
                     <div className="w-10 h-10 overflow-hidden bg-gray-200 rounded-full">
-                      {user.pic ? (
-                        <img src={user.pic} alt={user.username} className="object-cover w-full h-full" />
+                      {currentUser.photoURL ? (
+                        <img src={currentUser.photoURL} alt={currentUser.username} className="object-cover w-full h-full" />
                       ) : (
                         <User className="w-6 h-6 m-2 text-gray-500" />
                       )}
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-800">{user.username}</h3>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <h3 className="text-sm font-medium text-gray-800">{currentUser.username || currentUser.displayName}</h3>
+                      <p className="text-xs text-gray-500">{currentUser.email}</p>
                     </div>
                   </div>
                   <Link
-                    to={`/profile/${user.id}`}
+                    to={`/profile/${currentUser.id}`}
                     className="block px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                     onClick={toggleMenu}
                   >
                     Your Profile
                   </Link>
                   <Link
-                    to="/"
+                    to="/settings"
                     className="block px-3 py-2 text-base font-medium text-gray-700 rounded-md hover:bg-gray-50"
                     onClick={toggleMenu}
                   >
@@ -198,7 +206,7 @@ const Header = () => {
                   </Link>
                   <button
                     onClick={() => {
-                      logout();
+                      handleLogout();
                       toggleMenu();
                     }}
                     className="flex items-center block w-full px-3 py-2 text-base font-medium text-left text-gray-700 rounded-md hover:bg-gray-50"

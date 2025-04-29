@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { app } from "../firebase";
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider 
+} from "firebase/auth";
+import GoogleLogo from "../assets/google.png";
+// import FacebookLogo from "../assets/facebook.png"
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +21,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const auth = getAuth(app);
 
   const handleChange = (e) => {
     setFormData({
@@ -36,7 +46,7 @@ const Register = () => {
       // Remove confirmPassword before sending to API
       const { confirmPassword, ...registerData } = formData;
       
-      const response = await axios.post('http://localhost:8080/api/register', registerData);
+      const response = await axios.post('http://localhost:8087/api/register', registerData);
       
       if (response.data) {
         // Navigate to login after successful registration
@@ -49,6 +59,72 @@ const Register = () => {
         setError(err.response?.data || 'Registration failed. Please try again.');
       }
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveFirebaseUserToBackend = async (firebaseUser) => {
+    setLoading(true);
+    try {
+      // Create a username from the display name or email
+      const username = firebaseUser.displayName || firebaseUser.email.split('@')[0];
+      
+      // Register the user with Firebase credentials
+      const response = await axios.post("http://localhost:8087/api/register", {
+        username: username,
+        email: firebaseUser.email,
+        password: firebaseUser.uid // Using Firebase UID as password for simplicity
+      });
+      
+      if (response.data) {
+        // Navigate to login after successful registration
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error("Error saving Firebase user to backend:", error);
+      
+      if (error.response && error.response.status === 400 && error.response.data.includes('already exists')) {
+        setError('Account with this email already exists. Please login instead.');
+      } else {
+        setError("Failed to register with social login. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Save Firebase user to backend
+      await saveFirebaseUserToBackend(user);
+    } catch (error) {
+      console.error("Google registration error:", error);
+      setError("Google registration failed. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setError('');
+    setLoading(true);
+    const provider = new FacebookAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Save Firebase user to backend
+      await saveFirebaseUserToBackend(user);
+    } catch (error) {
+      console.error("Facebook registration error:", error);
+      setError("Facebook registration failed. Please try again.");
       setLoading(false);
     }
   };
@@ -76,9 +152,6 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="username" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg> */}
                 Username
               </label>
               <input
@@ -94,9 +167,6 @@ const Register = () => {
             
             <div className="space-y-2">
               <label htmlFor="email" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg> */}
                 Email
               </label>
               <input
@@ -112,9 +182,6 @@ const Register = () => {
             
             <div className="space-y-2">
               <label htmlFor="password" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg> */}
                 Password
               </label>
               <input
@@ -130,9 +197,6 @@ const Register = () => {
             
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="flex items-center text-sm font-medium text-gray-300">
-                {/* <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg> */}
                 Confirm Password
               </label>
               <input
@@ -163,6 +227,30 @@ const Register = () => {
               ) : (
                 'Register'
               )}
+            </button>
+            
+            <div className="my-2 text-center">
+              <span className="text-gray-400">Or register with</span>
+            </div>
+            
+            <button 
+              type="button" 
+              onClick={handleGoogleSignIn} 
+              className="flex items-center justify-center w-full px-4 py-3 text-gray-800 transition-all duration-300 bg-white rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              disabled={loading}
+            >
+              <span className="mr-2">GOOGLE</span>
+              Sign up with Google
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleFacebookSignIn} 
+              className="flex items-center justify-center w-full px-4 py-3 text-white transition-all duration-300 bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+            >
+              <span className="mr-2">facebook</span>
+              Sign up with Facebook
             </button>
             
             <div className="mt-6 text-center">
