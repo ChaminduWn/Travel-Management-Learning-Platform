@@ -1,8 +1,6 @@
-import { ChatState } from "../../context/ChatProvider";
+import React from "react";
 
-const UserListItem = ({ handleFunction }) => {
-  const { user } = ChatState();
-
+const UserListItem = ({ user, handleFunction }) => {
   return (
     <div
       onClick={handleFunction}
