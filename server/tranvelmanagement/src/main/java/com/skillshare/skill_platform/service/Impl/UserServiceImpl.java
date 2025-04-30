@@ -1,4 +1,4 @@
-package com.skillshare.skill_platform.service.Impl;
+package com.skillshare.skill_platform.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -7,10 +7,12 @@ import com.skillshare.skill_platform.dto.UserDTO;
 import com.skillshare.skill_platform.dto.UserProfileDTO;
 import com.skillshare.skill_platform.entity.User;
 import com.skillshare.skill_platform.entity.UserProfile;
+import com.skillshare.skill_platform.entity.Status;
 import com.skillshare.skill_platform.repository.UserProfileRepository;
 import com.skillshare.skill_platform.repository.UserRepository;
 import com.skillshare.skill_platform.service.UserService;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
                     newUser.setId(UUID.randomUUID().toString());
                     newUser.setEmail(email);
                     newUser.setName(email.split("@")[0]); // Use part of email as name
+                    newUser.setStatus(Status.OFFLINE.name()); // Default status
                     return userRepository.save(newUser);
                 });
     }
@@ -84,5 +87,26 @@ public class UserServiceImpl implements UserService {
         result.setProfilePictureUrl(profile.getProfilePictureUrl());
         result.setFullName(profile.getFullName());
         return result;
+    }
+
+    // Chatroom methods
+    @Override
+    public void saveUser(User user) {
+        user.setStatus(Status.ONLINE.name());
+        userRepository.save(user);
+    }
+
+    @Override
+    public void disconnect(User user) {
+        User storedUser = userRepository.findById(user.getId()).orElse(null);
+        if (storedUser != null) {
+            storedUser.setStatus(Status.OFFLINE.name());
+            userRepository.save(storedUser);
+        }
+    }
+
+    @Override
+    public List<User> findConnectedUsers() {
+        return userRepository.findAllByStatus(Status.ONLINE);
     }
 }

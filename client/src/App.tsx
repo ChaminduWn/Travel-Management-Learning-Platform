@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import SearchPage from './pages/SearchPage';
-import NotificationsPage from './pages/NotificationsPage';
+import NotificationsPage from './contexts/NotificationContext';
 import LearningPlanPage from './pages/LearningPlanPage';
 import LearningPlanListPage from './pages/LearningPlanListPage';
 import TestLearningPlanPage from './pages/TestLearningPlanPage';
@@ -15,7 +15,7 @@ import CreateLearningPlanPage from './pages/CreateLearningPlanPage';
 import EditLearningPlanPage from './pages/EditLearningPlanPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-
+import Chatroom from './pages/Chatroom'; 
 function App() {
   return (
     <Router>
@@ -35,6 +35,7 @@ function App() {
                   <Route path="/my-plans" element={<LearningPlanListPage />} />
                   <Route path="/test-learning-plans" element={<TestLearningPlanPage />} />
                   <Route path="/create-learning-plan" element={<CreateLearningPlanPage />} />
+                  <Route path="/chatroom" element={<Chatroom />} />
                   <Route path="/edit-learning-plan/:id" element={<EditLearningPlanPage />} />
                 </Route>
               </Route>

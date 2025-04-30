@@ -4,6 +4,8 @@ import com.skillshare.skill_platform.dto.UserDTO;
 import com.skillshare.skill_platform.dto.UserProfileDTO;
 import com.skillshare.skill_platform.entity.User;
 
+import java.util.List;
+
 public interface UserService {
     // Profile management
     UserProfileDTO createOrUpdateProfile(String userId, UserProfileDTO profileDTO);
@@ -12,4 +14,9 @@ public interface UserService {
     // Simple user management methods
     User findOrCreateUserByEmail(String email);
     User findUserById(String userId);
+
+    // Chatroom methods
+    void saveUser(User user);
+    void disconnect(User user);
+    List<User> findConnectedUsers();
 }

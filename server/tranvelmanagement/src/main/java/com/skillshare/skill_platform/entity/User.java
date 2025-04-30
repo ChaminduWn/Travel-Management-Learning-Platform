@@ -11,12 +11,12 @@ public class User {
     @Id
     private String id;
     private String email;
-    private String name;
+    private String name; // Map this to nickName for chatroom purposes
     private String password;
     private String oauthProvider;
     private String oauthId;
-    
+    private String status; // Add status for chatroom (ONLINE/OFFLINE)
+
     @DBRef
     private UserProfile userProfile;
-
 }
