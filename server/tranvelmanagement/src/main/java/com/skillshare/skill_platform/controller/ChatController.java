@@ -1,4 +1,4 @@
-package com.tranvelmanagement.tranvelmanagement.controller;
+package com.skillshare.skill_platform.controller;
 
 import com.tranvelmanagement.tranvelmanagement.dto.ApiResponse;
 import com.tranvelmanagement.tranvelmanagement.dto.ChatDTO;
