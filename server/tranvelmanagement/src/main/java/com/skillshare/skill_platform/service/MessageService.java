@@ -21,7 +21,7 @@ public class MessageService {
     private MessageRepository messageRepository;
     
     @Autowired
-    private ChatRepository chatRepository;
+    private ChatMessageRepository chatRepository;
     
     @Autowired
     private ChatService chatService;

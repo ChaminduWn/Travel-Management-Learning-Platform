@@ -18,7 +18,7 @@ import java.util.Optional;
 public class ChatService {
     
     @Autowired
-    private ChatRepository chatRepository;
+    private ChatMessageRepository chatRepository;
     
     @Autowired
     private UserRepository userRepository;
