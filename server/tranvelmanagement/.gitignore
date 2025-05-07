@@ -37,3 +37,6 @@ build/
 **/application-prod.properties
 **/credentials.properties
 *.env
+
+server/tranvelmanagement/src/main/resources/application.properties
+
