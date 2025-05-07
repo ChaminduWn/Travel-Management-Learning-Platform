@@ -1,95 +1,164 @@
 package com.skillshare.skill_platform.controller;
 
-import com.tranvelmanagement.tranvelmanagement.dto.ApiResponse;
-import com.tranvelmanagement.tranvelmanagement.dto.ChatDTO;
-import com.tranvelmanagement.tranvelmanagement.dto.request.AccessChatRequest;
-import com.tranvelmanagement.tranvelmanagement.dto.request.CreateGroupChatRequest;
-import com.tranvelmanagement.tranvelmanagement.dto.request.GroupUpdateRequest;
-import com.tranvelmanagement.tranvelmanagement.dto.request.RenameGroupRequest;
-import com.tranvelmanagement.tranvelmanagement.model.Chat;
-import com.tranvelmanagement.tranvelmanagement.model.User;
-import com.tranvelmanagement.tranvelmanagement.service.ChatService;
-import com.tranvelmanagement.tranvelmanagement.util.DTOConverter;
+import com.skillshare.skill_platform.entity.ChatMessage;
+import com.skillshare.skill_platform.entity.ChatRoom;
+import com.skillshare.skill_platform.entity.User;
+import com.skillshare.skill_platform.service.ChatService;
+import com.skillshare.skill_platform.service.CustomOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.skillshare.skill_platform.repository.ChatRoomRepository;
+import com.skillshare.skill_platform.repository.UserRepository;
+
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/chat")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class ChatController {
     
-    @Autowired
-    private ChatService chatService;
+    private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
     
     @Autowired
-    private DTOConverter dtoConverter;
+    public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate, 
+                          UserRepository userRepository, ChatRoomRepository chatRoomRepository) {
+        this.chatService = chatService;
+        this.messagingTemplate = messagingTemplate;
+        this.userRepository = userRepository;
+        this.chatRoomRepository = chatRoomRepository;
+    }
     
-    @PostMapping
-    public ResponseEntity<?> accessChat(@RequestBody AccessChatRequest request, @AuthenticationPrincipal User currentUser) {
+    @PostMapping("/rooms")
+    public ResponseEntity<?> createChatRoom(
+            @RequestBody ChatRoomRequest request, 
+            @AuthenticationPrincipal Object principal) {
+        User user = extractUser(principal);
+        if (user == null) {
+            System.err.println("No authenticated user found for POST /api/chat/rooms. Principal: " + 
+                (principal != null ? principal.getClass().getName() : "null"));
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+        System.out.println("Creating chat room for user: " + user.getId() + ", email: " + user.getEmail());
         try {
-            Chat chat = chatService.accessChat(request.getUserId(), currentUser);
-            return ResponseEntity.ok(dtoConverter.convertToDTO(chat));
+            ChatRoom chatRoom = chatService.createChatRoom(request.getName(), user);
+            return ResponseEntity.ok(chatRoom);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            System.err.println("Error creating chat room: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to create chat room: " + e.getMessage());
         }
     }
     
-    @GetMapping
-    public ResponseEntity<?> fetchChats(@AuthenticationPrincipal User currentUser) {
+    @GetMapping("/rooms")
+    public ResponseEntity<?> getUserChatRooms(@AuthenticationPrincipal Object principal) {
+        User user = extractUser(principal);
+        if (user == null) {
+            System.err.println("No authenticated user found for GET /api/chat/rooms. Principal: " + 
+                (principal != null ? principal.getClass().getName() : "null"));
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+        System.out.println("Fetching chat rooms for user: " + user.getId() + ", email: " + user.getEmail());
         try {
-            List<Chat> chats = chatService.fetchChats(currentUser);
-            List<ChatDTO> chatDTOs = chats.stream()
-                    .map(chat -> dtoConverter.convertToDTO(chat))
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(chatDTOs);
+            List<ChatRoom> rooms = chatService.getUserChatRooms(user.getId());
+            return ResponseEntity.ok(rooms);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, e.getMessage()));
+            System.err.println("Error fetching chat rooms: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to fetch chat rooms: " + e.getMessage());
         }
     }
     
-    @PostMapping("/group")
-    public ResponseEntity<?> createGroupChat(@RequestBody CreateGroupChatRequest request, @AuthenticationPrincipal User currentUser) {
+    @GetMapping("/messages/{roomId}")
+    public ResponseEntity<?> getChatMessages(@PathVariable String roomId) {
         try {
-            Chat groupChat = chatService.createGroupChat(request.getName(), request.getUsers(), currentUser);
-            return ResponseEntity.status(HttpStatus.CREATED).body(dtoConverter.convertToDTO(groupChat));
+            List<ChatMessage> messages = chatService.getChatMessages(roomId);
+            return ResponseEntity.ok(messages);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            System.err.println("Error fetching messages for room " + roomId + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to fetch messages: " + e.getMessage());
         }
     }
     
-    @PutMapping("/rename")
-    public ResponseEntity<?> renameGroup(@RequestBody RenameGroupRequest request, @AuthenticationPrincipal User currentUser) {
+    @MessageMapping("/chat.send")
+    @SendTo("/topic/messages")
+    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
         try {
-            Chat updatedChat = chatService.renameGroup(request.getChatId(), request.getChatName(), currentUser);
-            return ResponseEntity.ok(dtoConverter.convertToDTO(updatedChat));
+            System.out.println("Raw message received: " + chatMessage);
+            // Resolve sender and chatRoom from IDs if they are partial objects
+            User sender = chatMessage.getSender() != null && chatMessage.getSender().getId() != null
+                ? userRepository.findById(chatMessage.getSender().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Sender not found: " + chatMessage.getSender().getId()))
+                : null;
+            ChatRoom chatRoom = chatMessage.getChatRoom() != null && chatMessage.getChatRoom().getId() != null
+                ? chatRoomRepository.findById(chatMessage.getChatRoom().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Chat room not found: " + chatMessage.getChatRoom().getId()))
+                : null;
+
+            System.out.println("Resolved sender: " + (sender != null ? sender.getId() : "null") + 
+                ", resolved chatRoom: " + (chatRoom != null ? chatRoom.getId() : "null"));
+            System.out.println("Received message to send: " + chatMessage.getContent() + 
+                " for room: " + (chatRoom != null ? chatRoom.getId() : "null") + 
+                ", sender: " + (sender != null ? sender.getId() : "null"));
+
+            if (chatRoom == null || chatRoom.getId() == null) {
+                throw new IllegalArgumentException("Chat room ID is null");
+            }
+            if (sender == null || sender.getId() == null) {
+                throw new IllegalArgumentException("Sender is null");
+            }
+
+            ChatMessage savedMessage = chatService.sendMessage(
+                chatRoom.getId(),
+                chatMessage.getContent(),
+                sender
+            );
+            messagingTemplate.convertAndSend(
+                "/topic/room." + chatRoom.getId(), 
+                savedMessage
+            );
+            System.out.println("Message saved and sent to topic: /topic/room." + chatRoom.getId());
+            return savedMessage;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, e.getMessage()));
+            System.err.println("Error processing message: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
     }
     
-    @PutMapping("/groupremove")
-    public ResponseEntity<?> removeFromGroup(@RequestBody GroupUpdateRequest request, @AuthenticationPrincipal User currentUser) {
-        try {
-            Chat updatedChat = chatService.removeFromGroup(request.getChatId(), request.getUserId(), currentUser);
-            return ResponseEntity.ok(dtoConverter.convertToDTO(updatedChat));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, e.getMessage()));
+    private User extractUser(Object principal) {
+        if (principal instanceof CustomOAuth2UserService.CustomOAuth2User) {
+            User user = ((CustomOAuth2UserService.CustomOAuth2User) principal).getUser();
+            System.out.println("Extracted user: ID=" + user.getId() + ", Email=" + user.getEmail() + 
+                ", OAuthProvider=" + user.getOauthProvider());
+            return user;
         }
+        System.err.println("Principal is not CustomOAuth2User: " + 
+            (principal != null ? principal.getClass().getName() : "null"));
+        return null;
     }
     
-    @PutMapping("/groupadd")
-    public ResponseEntity<?> addToGroup(@RequestBody GroupUpdateRequest request, @AuthenticationPrincipal User currentUser) {
-        try {
-            Chat updatedChat = chatService.addToGroup(request.getChatId(), request.getUserId(), currentUser);
-            return ResponseEntity.ok(dtoConverter.convertToDTO(updatedChat));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, e.getMessage()));
+    public static class ChatRoomRequest {
+        private String name;
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
         }
     }
 }
