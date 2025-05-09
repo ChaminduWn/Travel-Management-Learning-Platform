@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore credentials files
+**/application-dev.properties
+**/application-prod.properties
+**/credentials.properties
+*.env
+
+server/tranvelmanagement/src/main/resources/application.properties
+

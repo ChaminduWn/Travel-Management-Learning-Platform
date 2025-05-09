@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -40,12 +39,16 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(authorize -> authorize
                 // Public endpoints
-                .requestMatchers("/api/auth/**", "/api/oauth2/**", "/oauth2/**", "/login/oauth2/code/*").permitAll()
-                .requestMatchers("/api/user/register", "/api/user/login").permitAll()
-                // Make all main endpoints public for now
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/oauth2/**").permitAll()
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/code/**").permitAll()
+                // Permit WebSocket endpoint
+                .requestMatchers("/ws-chat/**").permitAll()
+                // Make all main endpoints public for now (secure later if needed)
                 .requestMatchers("/api/posts/**").permitAll()
                 .requestMatchers("/api/comments/**").permitAll()
                 .requestMatchers("/api/user/**").permitAll()
@@ -57,8 +60,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/comments/public/**").permitAll()
                 .requestMatchers("/api/resources/public/**").permitAll()
                 .requestMatchers("/api/topics/public/**").permitAll()
-
-
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
@@ -66,6 +67,10 @@ public class SecurityConfig {
                     .userService(customOAuth2UserService))
                 .successHandler(oAuth2AuthenticationSuccessHandler)
                 .failureHandler(oAuth2AuthenticationFailureHandler)
+                .authorizationEndpoint(auth -> auth
+                    .baseUri("/oauth2/authorization"))
+                .redirectionEndpoint(redir -> redir
+                    .baseUri("/login/oauth2/code/*"))
             );
 
         return http.build();
@@ -74,7 +79,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Type", "Access-Control-Allow-Origin"));

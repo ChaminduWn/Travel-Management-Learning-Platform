@@ -12,4 +12,8 @@ public interface UserService {
     // Simple user management methods
     User findOrCreateUserByEmail(String email);
     User findUserById(String userId);
+    
+    // New methods for manual authentication
+    User registerUser(String name, String email, String password);
+    User authenticate(String email, String password);
 }

@@ -40,6 +40,32 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User registerUser(String name, String email, String password) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new RuntimeException("Email already in use");
+        }
+        
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(password); // This will be hashed via the setter
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User authenticate(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (!user.checkPassword(password)) {
+            throw new RuntimeException("Invalid password");
+        }
+        
+        return user;
+    }
+
+    @Override
     public UserProfileDTO createOrUpdateProfile(String userId, UserProfileDTO profileDTO) {
         UserProfile profile = userProfileRepository.findByUserId(userId);
         if (profile == null) {
