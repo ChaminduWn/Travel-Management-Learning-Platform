@@ -5,6 +5,8 @@ import com.skillshare.skill_platform.entity.ChatRoom;
 import com.skillshare.skill_platform.entity.User;
 import com.skillshare.skill_platform.service.ChatService;
 import com.skillshare.skill_platform.service.CustomOAuth2UserService;
+import com.skillshare.skill_platform.repository.ChatRoomRepository;
+import com.skillshare.skill_platform.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -14,9 +16,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import com.skillshare.skill_platform.repository.ChatRoomRepository;
-import com.skillshare.skill_platform.repository.UserRepository;
-
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -49,8 +50,16 @@ public class ChatController {
             return ResponseEntity.status(401).body("User not authenticated");
         }
         System.out.println("Creating chat room for user: " + user.getId() + ", email: " + user.getEmail());
+        System.out.println("Request isActive: " + request.isActive());
         try {
-            ChatRoom chatRoom = chatService.createChatRoom(request.getName(), user);
+            ChatRoom chatRoom = chatService.createChatRoom(
+                request.getName(),
+                request.getDescription(),
+                request.getTime(),
+                request.getDate(),
+                request.isActive(),
+                user
+            );
             return ResponseEntity.ok(chatRoom);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -58,6 +67,75 @@ public class ChatController {
             System.err.println("Error creating chat room: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body("Failed to create chat room: " + e.getMessage());
+        }
+    }
+    
+    @PutMapping("/rooms/{roomId}")
+    public ResponseEntity<?> updateChatRoom(
+            @PathVariable String roomId,
+            @RequestBody ChatRoomRequest request,
+            @AuthenticationPrincipal Object principal) {
+        User user = extractUser(principal);
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+        try {
+            ChatRoom updatedRoom = chatService.updateChatRoom(
+                roomId,
+                request.getName(),
+                request.getDescription(),
+                request.getTime(),
+                request.getDate(),
+                request.isActive(),
+                user
+            );
+            return ResponseEntity.ok(updatedRoom);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error updating chat room: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to update chat room: " + e.getMessage());
+        }
+    }
+    
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<?> deleteChatRoom(
+            @PathVariable String roomId,
+            @AuthenticationPrincipal Object principal) {
+        User user = extractUser(principal);
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+        try {
+            chatService.deleteChatRoom(roomId, user);
+            return ResponseEntity.ok("Chat room deleted successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error deleting chat room: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to delete chat room: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/rooms/{roomId}/join")
+    public ResponseEntity<?> joinChatRoom(
+            @PathVariable String roomId,
+            @AuthenticationPrincipal Object principal) {
+        User user = extractUser(principal);
+        if (user == null) {
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+        try {
+            ChatRoom chatRoom = chatService.addParticipant(roomId, user);
+            return ResponseEntity.ok(chatRoom);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error joining chat room: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to join chat room: " + e.getMessage());
         }
     }
     
@@ -94,10 +172,9 @@ public class ChatController {
     
     @MessageMapping("/chat.send")
     @SendTo("/topic/messages")
-    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
+    public ChatMessage sendMessage(@Payload ChatMessage chatMessage, @AuthenticationPrincipal Object principal) {
         try {
             System.out.println("Raw message received: " + chatMessage);
-            // Resolve sender and chatRoom from IDs if they are partial objects
             User sender = chatMessage.getSender() != null && chatMessage.getSender().getId() != null
                 ? userRepository.findById(chatMessage.getSender().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Sender not found: " + chatMessage.getSender().getId()))
@@ -152,6 +229,10 @@ public class ChatController {
     
     public static class ChatRoomRequest {
         private String name;
+        private String description;
+        private LocalTime time;
+        private LocalDate date;
+        private boolean isActive = true;
         
         public String getName() {
             return name;
@@ -159,6 +240,38 @@ public class ChatController {
         
         public void setName(String name) {
             this.name = name;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+        
+        public void setDescription(String description) {
+            this.description = description;
+        }
+        
+        public LocalTime getTime() {
+            return time;
+        }
+        
+        public void setTime(LocalTime time) {
+            this.time = time;
+        }
+        
+        public LocalDate getDate() {
+            return date;
+        }
+        
+        public void setDate(LocalDate date) {
+            this.date = date;
+        }
+        
+        public boolean isActive() {
+            return isActive;
+        }
+        
+        public void setActive(boolean isActive) {
+            this.isActive = isActive;
         }
     }
 }
