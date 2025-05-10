@@ -22,7 +22,8 @@ public class WebSocketConfig extends AbstractSecurityWebSocketMessageBrokerConfi
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-chat")
                 .setAllowedOrigins("http://localhost:5173", "http://localhost:3000")
-                .withSockJS();
+                .withSockJS()
+                .setSessionCookieNeeded(true); // Ensure session cookies are used
     }
 
     @Override

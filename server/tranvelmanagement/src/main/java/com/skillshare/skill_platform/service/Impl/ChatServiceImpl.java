@@ -9,10 +9,11 @@ import com.skillshare.skill_platform.repository.UserRepository;
 import com.skillshare.skill_platform.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -31,7 +32,7 @@ public class ChatServiceImpl implements ChatService {
     }
     
     @Override
-    public ChatRoom createChatRoom(String name, User creator) {
+    public ChatRoom createChatRoom(String name, String description, LocalTime time, LocalDate date, boolean isActive, User creator) {
         if (creator == null || creator.getId() == null) {
             throw new IllegalArgumentException("Creator user must not be null");
         }
@@ -42,22 +43,82 @@ public class ChatServiceImpl implements ChatService {
         if (!userRepository.existsById(creator.getId())) {
             throw new IllegalArgumentException("User with ID " + creator.getId() + " not found in database");
         }
-        if (creator.getUserProfile() == null || creator.getUserProfile().getId() == null) {
-            throw new IllegalArgumentException("User with ID " + creator.getId() + " has no valid UserProfile");
-        }
         
         try {
+            System.out.println("Creating chat room with isActive: " + isActive); // Debug log
             ChatRoom chatRoom = new ChatRoom();
             chatRoom.setName(name);
+            chatRoom.setDescription(description);
+            chatRoom.setTime(time);
+            chatRoom.setDate(date);
+            chatRoom.setActive(isActive);
             chatRoom.setCreatedBy(creator.getId());
             chatRoom.getParticipants().add(creator);
             ChatRoom savedRoom = chatRoomRepository.save(chatRoom);
-            System.out.println("Created chat room: " + savedRoom.getId());
+            System.out.println("Created chat room: " + savedRoom.getId() + ", isActive: " + savedRoom.isActive());
             return savedRoom;
         } catch (Exception e) {
             System.err.println("Error creating chat room: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to create chat room: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public ChatRoom updateChatRoom(String chatRoomId, String name, String description, LocalTime time, LocalDate date, boolean isActive, User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must not be null");
+        }
+        if (chatRoomId == null) {
+            throw new IllegalArgumentException("Chat room ID must not be null");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Chat room name must not be empty");
+        }
+        
+        try {
+            ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat room with ID " + chatRoomId + " not found"));
+            
+            if (!chatRoom.getCreatedBy().equals(user.getId())) {
+                throw new IllegalArgumentException("Only the creator can update the chat room");
+            }
+            
+            chatRoom.setName(name);
+            chatRoom.setDescription(description);
+            chatRoom.setTime(time);
+            chatRoom.setDate(date);
+            chatRoom.setActive(isActive);
+            return chatRoomRepository.save(chatRoom);
+        } catch (Exception e) {
+            System.err.println("Error updating chat room: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to update chat room: " + e.getMessage(), e);
+        }
+    }
+    
+    @Override
+    public void deleteChatRoom(String chatRoomId, User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must not be null");
+        }
+        if (chatRoomId == null) {
+            throw new IllegalArgumentException("Chat room ID must not be null");
+        }
+        
+        try {
+            ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat room with ID " + chatRoomId + " not found"));
+            
+            if (!chatRoom.getCreatedBy().equals(user.getId())) {
+                throw new IllegalArgumentException("Only the creator can delete the chat room");
+            }
+            
+            chatRoomRepository.delete(chatRoom);
+        } catch (Exception e) {
+            System.err.println("Error deleting chat room: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to delete chat room: " + e.getMessage(), e);
         }
     }
     
@@ -71,9 +132,6 @@ public class ChatServiceImpl implements ChatService {
         }
         if (!userRepository.existsById(user.getId())) {
             throw new IllegalArgumentException("User with ID " + user.getId() + " not found in database");
-        }
-        if (user.getUserProfile() == null || user.getUserProfile().getId() == null) {
-            throw new IllegalArgumentException("User with ID " + user.getId() + " has no valid UserProfile");
         }
         
         try {
@@ -105,23 +163,8 @@ public class ChatServiceImpl implements ChatService {
         }
         
         try {
-            User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + userId + " not found"));
-            
-            List<ChatRoom> allRooms = chatRoomRepository.findAll();
-            
-            List<ChatRoom> updatedRooms = allRooms.stream()
-                .map(room -> {
-                    if (room.getParticipants().stream().noneMatch(p -> p.getId().equals(userId))) {
-                        room.getParticipants().add(user);
-                        return chatRoomRepository.save(room);
-                    }
-                    return room;
-                })
-                .collect(Collectors.toList());
-            
-            System.out.println("Fetched and updated " + updatedRooms.size() + " chat rooms for user: " + userId);
-            return updatedRooms;
+            // Return all chat rooms, not just those where the user is a participant
+            return chatRoomRepository.findAll();
         } catch (Exception e) {
             System.err.println("Error fetching chat rooms for user " + userId + ": " + e.getMessage());
             e.printStackTrace();
@@ -140,19 +183,19 @@ public class ChatServiceImpl implements ChatService {
         if (!userRepository.existsById(sender.getId())) {
             throw new IllegalArgumentException("User with ID " + sender.getId() + " not found in database");
         }
-        if (sender.getUserProfile() == null || sender.getUserProfile().getId() == null) {
-            throw new IllegalArgumentException("User with ID " + sender.getId() + " has no valid UserProfile");
-        }
         
         try {
-            System.out.println("Saving message: " + content + " for room: " + chatRoomId + " by sender: " + sender.getId());
+            ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new IllegalArgumentException("Chat room with ID " + chatRoomId + " not found"));
+            
+            if (!chatRoom.isActive()) {
+                throw new IllegalArgumentException("Cannot send messages to inactive chat room");
+            }
+            
             ChatMessage message = new ChatMessage();
             message.setContent(content);
             message.setSender(sender);
             message.setTimestamp(LocalDateTime.now());
-            
-            ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-                .orElseThrow(() -> new IllegalArgumentException("Chat room with ID " + chatRoomId + " not found"));
             message.setChatRoom(chatRoom);
             
             ChatMessage savedMessage = chatMessageRepository.save(message);
