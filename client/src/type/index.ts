@@ -28,3 +28,30 @@ export interface ChatRoom {
     createdAt?: Date | string;
     updatedAt?: Date | string;
 }
+
+export interface Quiz {
+    id: string;
+    title: string;
+    description?: string;
+    category: string;
+    createdBy: string;
+    questionIds: string[];
+    isActive: boolean;
+}
+
+export interface Question {
+    id: string;
+    quizId: string;
+    text: string;
+    options: string[];
+    correctAnswer?: string;
+}
+
+export interface UserAnswer {
+    id: string;
+    quizId: string;
+    questionId: string;
+    userId: string;
+    selectedAnswer: string;
+    isCorrect: boolean;
+}

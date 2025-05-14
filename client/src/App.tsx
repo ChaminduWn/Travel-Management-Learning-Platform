@@ -17,6 +17,7 @@ import EditLearningPlanPage from './pages/EditLearningPlanPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import ChatPage from './pages/ChatPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import QuizPage from './pages/QuizPage';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
                   <Route path="/create-learning-plan" element={<CreateLearningPlanPage />} />
                   <Route path="/edit-learning-plan/:id" element={<EditLearningPlanPage />} />
                   <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/quizzes" element={<QuizPage />} />
                 </Route>
               </Route>
               

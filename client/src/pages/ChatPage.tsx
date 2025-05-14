@@ -18,7 +18,6 @@ export default function ChatPage() {
             try {
                 setError(null);
                 const rooms = await getChatRooms();
-                console.log('Fetched chat rooms:', rooms); // Debug log
                 setChatRooms(rooms);
                 if (rooms.length > 0 && !selectedRoom) {
                     setSelectedRoom(rooms[0]);
@@ -28,11 +27,10 @@ export default function ChatPage() {
                 if (error.message.includes('not authenticated')) {
                     navigate('/login');
                 } else {
-                    setError(error.message || 'Failed to load chat rooms. Please try again.');
+                    setError(error.message || 'Failed to load chat rooms.');
                 }
             }
         };
-
         fetchChatRooms();
     }, [navigate, selectedRoom]);
 
@@ -49,10 +47,8 @@ export default function ChatPage() {
         try {
             setError(null);
             const newRoom = await createChatRoom(room);
-            console.log('Created room:', newRoom); // Debug log
             setChatRooms(prevRooms => [...prevRooms, newRoom]);
             setSelectedRoom(newRoom);
-            // Refetch to ensure consistency
             const refreshedRooms = await getChatRooms();
             setChatRooms(refreshedRooms);
         } catch (error: any) {
@@ -60,7 +56,7 @@ export default function ChatPage() {
             if (error.message.includes('not authenticated')) {
                 navigate('/login');
             } else {
-                setError(error.message || 'Failed to create chat room. Please try again.');
+                setError(error.message || 'Failed to create chat room.');
             }
         }
     };
@@ -69,17 +65,15 @@ export default function ChatPage() {
         try {
             setError(null);
             const updatedRoom = await updateChatRoom(roomId, room);
-            console.log('Updated room:', updatedRoom); // Debug log
             setChatRooms(chatRooms.map(r => r.id === roomId ? updatedRoom : r));
             if (selectedRoom?.id === roomId) {
                 setSelectedRoom(updatedRoom);
             }
-            // Refetch to ensure consistency
             const refreshedRooms = await getChatRooms();
             setChatRooms(refreshedRooms);
         } catch (error: any) {
             console.error('Error updating chat room:', error);
-            setError(error.message || 'Failed to update chat room. Please try again.');
+            setError(error.message || 'Failed to update chat room.');
         }
     };
 
@@ -91,12 +85,11 @@ export default function ChatPage() {
             if (selectedRoom?.id === roomId) {
                 setSelectedRoom(chatRooms.length > 1 ? chatRooms[0] : null);
             }
-            // Refetch to ensure consistency
             const refreshedRooms = await getChatRooms();
             setChatRooms(refreshedRooms);
         } catch (error: any) {
             console.error('Error deleting chat room:', error);
-            setError(error.message || 'Failed to delete chat room. Please try again.');
+            setError(error.message || 'Failed to delete chat room.');
         }
     };
 
@@ -104,22 +97,26 @@ export default function ChatPage() {
         try {
             setError(null);
             const updatedRoom = await joinChatRoom(room.id);
-            console.log('Joined room:', updatedRoom); // Debug log
             setChatRooms(chatRooms.map(r => r.id === room.id ? updatedRoom : r));
             setSelectedRoom(updatedRoom);
         } catch (error: any) {
             console.error('Error joining chat room:', error);
-            setError(error.message || 'Failed to join chat room. Please try again.');
+            setError(error.message || 'Failed to join chat room.');
         }
     };
 
     if (!user) {
-        return <div className="flex items-center justify-center h-screen text-black">Please login to access the chat</div>;
+        return (
+            <div className="flex items-center justify-center h-screen text-gray-900 bg-gray-100 dark:text-gray-100 dark:bg-gray-900">
+                Please login to access the chat
+            </div>
+        );
     }
 
     return (
-        <div className="flex h-screen bg-gray-50">
-            <div className="bg-white border-r border-gray-200 shadow-md w-2/8">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+            {/* Sidebar: Fixed ChatRoomList */}
+            <div className="flex-shrink-0 bg-white border-r border-gray-200 shadow-lg w-80 dark:bg-gray-800 dark:border-gray-700">
                 <ChatRoomList 
                     rooms={chatRooms}
                     selectedRoom={selectedRoom}
@@ -130,17 +127,18 @@ export default function ChatPage() {
                     currentUserId={user.id}
                 />
             </div>
-            <div className="w-3/4">
+            {/* Main Content */}
+            <div className="flex flex-col flex-1">
                 {error && (
-                    <div className="p-4 text-red-600 border-b border-red-200 bg-red-50">
+                    <div className="p-4 text-red-600 border-b border-red-200 dark:text-red-400 bg-red-50 dark:bg-red-900/50 dark:border-red-700">
                         {error}
                     </div>
                 )}
                 {selectedRoom ? (
                     <ChatRoom room={selectedRoom} currentUser={user} />
                 ) : (
-                    <div className="flex items-center justify-center h-full text-black">
-                        <p>Select a chat room or create a new one</p>
+                    <div className="flex items-center justify-center flex-1 text-gray-600 dark:text-gray-300">
+                        Select a chat room or create a new one
                     </div>
                 )}
             </div>

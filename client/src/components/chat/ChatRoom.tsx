@@ -5,7 +5,7 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import UserList from './UserList';
 import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs'; // Import Client explicitly
+import { Client } from '@stomp/stompjs';
 
 interface StompMessage {
   body: string;
@@ -27,12 +27,11 @@ interface ChatRoomProps {
 
 export default function ChatRoom({ room, currentUser }: ChatRoomProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [stompClient, setStompClient] = useState<any | null>(null); // Correct typing for stompClient
+    const [stompClient, setStompClient] = useState<any | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [isUserListOpen, setIsUserListOpen] = useState(false);
 
     useEffect(() => {
-        console.log('ChatRoom props - room:', room); // Debug log to inspect room data
-
         const fetchMessages = async () => {
             try {
                 const fetchedMessages = await getChatMessages(room.id);
@@ -59,7 +58,6 @@ export default function ChatRoom({ room, currentUser }: ChatRoomProps) {
             console.log('Connected to WebSocket for room:', room.id);
             client.subscribe(`/topic/room.${room.id}`, (message: StompMessage) => {
                 try {
-                    console.log('Received message body:', message.body);
                     const newMessage = JSON.parse(message.body) as ChatMessage;
                     if (newMessage.content && newMessage.sender?.id) {
                         setMessages((prev) => [...prev, {
@@ -96,52 +94,62 @@ export default function ChatRoom({ room, currentUser }: ChatRoomProps) {
 
     const handleSendMessage = (content: string) => {
         if (stompClient && content.trim() && stompClient.connected) {
-            console.log('Sending message:', content, 'to room:', room.id);
             const message = {
                 content,
                 sender: { id: currentUser.id, name: currentUser.name } as User,
                 chatRoom: { id: room.id, name: room.name } as ChatRoomType,
-                timestamp: new Date().toISOString(), // Ensure timestamp is a string for JSON serialization
+                timestamp: new Date().toISOString(),
             };
-            console.log('Message payload:', JSON.stringify(message));
             try {
                 stompClient.publish({
                     destination: '/app/chat.send',
                     body: JSON.stringify(message),
                 });
-                console.log('Message published successfully');
             } catch (error) {
                 console.error('Failed to publish message:', error);
-                setConnectionError('Failed to send message. Check WebSocket connection.');
+                setConnectionError('Failed to send message.');
             }
         } else {
-            console.log('Cannot send message: stompClient not connected or content invalid');
-            setConnectionError('WebSocket not connected. Please try again.');
+            setConnectionError('WebSocket not connected.');
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-white">
-            <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-black">{room.name}</h2>
-                {room.description && <p className="text-sm text-gray-600">{room.description}</p>}
-                <div className="text-sm text-gray-500">
-                    {room.time && <span>Time: {room.time} | </span>}
-                    {room.date && <span>Date: {room.date} | </span>}
-                    <span>Status: {room.isActive ? 'Active' : 'Inactive'}</span>
+        <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-800">
+            {/* Header */}
+            <div className="p-4 bg-white border-b border-gray-200 dark:border-gray-700 dark:bg-gray-900">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{room.name}</h2>
+                        {room.description && <p className="text-sm text-gray-600 dark:text-gray-400">{room.description}</p>}
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {room.time && <span>Time: {room.time} | </span>}
+                            {room.date && <span>Date: {room.date} | </span>}
+                            <span>Status: {room.isActive ? 'Active' : 'Inactive'}</span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setIsUserListOpen(!isUserListOpen)}
+                        className="p-2 text-gray-600 rounded-lg dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    >
+                        {isUserListOpen ? 'Hide Users' : 'Show Users'}
+                    </button>
                 </div>
                 {connectionError && (
-                    <div className="mt-1 text-sm text-red-500">{connectionError}</div>
+                    <div className="mt-2 text-sm text-red-500 dark:text-red-400">{connectionError}</div>
                 )}
             </div>
+            {/* Main Content */}
             <div className="flex flex-1 overflow-hidden">
                 <div className="flex flex-col flex-1">
                     <MessageList messages={messages} currentUser={currentUser} />
                     <MessageInput onSendMessage={handleSendMessage} disabled={false} />
                 </div>
-                <div className="w-1/4 p-4 border-l border-gray-200 bg-gray-50">
-                    <UserList participants={room.participants} />
-                </div>
+                {isUserListOpen && (
+                    <div className="flex-shrink-0 w-64 p-4 bg-white border-l border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+                        <UserList participants={room.participants} />
+                    </div>
+                )}
             </div>
         </div>
     );

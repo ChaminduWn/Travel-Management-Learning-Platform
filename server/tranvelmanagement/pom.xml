@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.3</version>
+        <version>3.2.12</version> <!-- Updated to latest 3.2.x patch -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.skillshare</groupId>
@@ -13,22 +13,9 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>skill-platform</name>
     <description>Demo project for Spring Boot</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
     <properties>
         <java.version>17</java.version>
-        <lombok.version>1.18.32</lombok.version> <!-- Added Lombok version -->
+        <lombok.version>1.18.32</lombok.version>
     </properties>
     <dependencies>
         <!-- Spring Boot Starters -->
@@ -61,7 +48,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-messaging</artifactId>
-            <version>6.2.2</version> <!-- Added for WebSocket security -->
+            <version>6.2.2</version>
         </dependency>
 
         <!-- Firebase -->
@@ -78,6 +65,14 @@
             <version>1.31.0</version>
         </dependency>
 
+        <!-- ModelMapper -->
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
+        <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
@@ -92,7 +87,6 @@
             <artifactId>stomp-websocket</artifactId>
             <version>2.3.4</version>
         </dependency>
-        
 
         <!-- Lombok -->
         <dependency>
@@ -100,8 +94,6 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
-        
 
         <!-- Test Dependencies -->
         <dependency>
@@ -148,4 +140,17 @@
         </plugins>
     </build>
 
+    <!-- Add Maven Central explicitly -->
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>
