@@ -18,7 +18,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className={`w-64 h-screen sticky top-16 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} shadow-sm overflow-y-auto p-4`}>
+    <aside className={`w-64 sticky h-screen pt-10  top-16 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} shadow-sm overflow-y-auto p-4`}>
       <nav className="space-y-1">
         {navItems.map((item) => (
           <NavLink

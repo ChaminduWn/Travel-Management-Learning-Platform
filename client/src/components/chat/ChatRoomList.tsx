@@ -20,14 +20,14 @@ export default function ChatRoomList({
     onDeleteRoom,
     currentUserId 
 }: ChatRoomListProps) {
-    const [newRoom, setNewRoom] = useState({ name: '', description: '', time: '', date: '', isActive: true });
+    const [newRoom, setNewRoom] = useState({ name: '', description: '', time: '', date: '' });
     const [editingRoom, setEditingRoom] = useState<ChatRoomType | null>(null);
     const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
 
     const handleCreateRoom = () => {
         if (newRoom.name.trim()) {
-            onCreateRoom(newRoom);
-            setNewRoom({ name: '', description: '', time: '', date: '', isActive: true });
+            onCreateRoom({ ...newRoom, isActive: true });
+            setNewRoom({ name: '', description: '', time: '', date: '' });
             setIsCreateFormOpen(false);
         }
     };
@@ -39,7 +39,7 @@ export default function ChatRoomList({
                 description: editingRoom.description,
                 time: editingRoom.time,
                 date: editingRoom.date,
-                isActive: editingRoom.isActive
+                isActive: true
             });
             setEditingRoom(null);
         }
@@ -87,15 +87,6 @@ export default function ChatRoomList({
                         onChange={(e) => setNewRoom({ ...newRoom, date: e.target.value })}
                         className="w-full p-2 mb-2 text-gray-900 bg-white border border-gray-300 rounded dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
-                    <label className="flex items-center mb-2 text-gray-700 dark:text-gray-300">
-                        <input
-                            type="checkbox"
-                            checked={newRoom.isActive}
-                            onChange={(e) => setNewRoom({ ...newRoom, isActive: e.target.checked })}
-                            className="mr-2"
-                        />
-                        Active
-                    </label>
                     <button
                         onClick={handleCreateRoom}
                         className="w-full px-4 py-2 text-white bg-blue-600 rounded dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
@@ -132,15 +123,6 @@ export default function ChatRoomList({
                         onChange={(e) => setEditingRoom({ ...editingRoom, date: e.target.value })}
                         className="w-full p-2 mb-2 text-gray-900 bg-white border border-gray-300 rounded dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                     />
-                    <label className="flex items-center mb-2 text-gray-700 dark:text-gray-300">
-                        <input
-                            type="checkbox"
-                            checked={editingRoom.isActive}
-                            onChange={(e) => setEditingRoom({ ...editingRoom, isActive: e.target.checked })}
-                            className="mr-2"
-                        />
-                        Active
-                    </label>
                     <div className="flex space-x-2">
                         <button
                             onClick={handleUpdateRoom}
@@ -174,7 +156,7 @@ export default function ChatRoomList({
                                 {room.description && ` | ${room.description}`}
                                 {room.time && ` | ${room.time}`}
                                 {room.date && ` | ${room.date}`}
-                                {` | ${room.isActive ? 'Active' : 'Inactive'}`}
+                                {` | Active`}
                             </div>
                             {room.createdBy === currentUserId && (
                                 <div className="flex mt-2 space-x-2">
