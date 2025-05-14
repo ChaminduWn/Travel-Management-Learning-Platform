@@ -1,7 +1,6 @@
 package com.skillshare.skill_platform.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.security.config.annotation.web.messaging.MessageSecurityMetadataSourceRegistry;
 import org.springframework.security.config.annotation.web.socket.AbstractSecurityWebSocketMessageBrokerConfigurer;
@@ -20,10 +19,17 @@ public class WebSocketConfig extends AbstractSecurityWebSocketMessageBrokerConfi
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Chat WebSocket endpoint
         registry.addEndpoint("/ws-chat")
                 .setAllowedOrigins("http://localhost:5173", "http://localhost:3000")
                 .withSockJS()
-                .setSessionCookieNeeded(true); // Ensure session cookies are used
+                .setSessionCookieNeeded(true);
+
+        // Quiz WebSocket endpoint
+        registry.addEndpoint("/ws-quiz")
+                .setAllowedOrigins("http://localhost:5173", "http://localhost:3000")
+                .withSockJS()
+                .setSessionCookieNeeded(true);
     }
 
     @Override

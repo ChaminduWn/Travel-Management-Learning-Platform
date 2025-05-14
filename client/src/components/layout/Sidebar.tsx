@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, User, Search, Bell, BookOpen, LogOut, MessageSquare } from 'lucide-react';
+import { Home, User, Search, Bell, BookOpen, LogOut, MessageSquare, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -9,11 +9,12 @@ const Sidebar = () => {
   
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="w-5 h-5" /> },
-    { name: 'Profile', path: `/profile/${user?.username}`, icon: <User className="w-5 h-5" /> },
+    { name: 'Profile', path: `/profile/${user?.userId}`, icon: <User className="w-5 h-5" /> },
     { name: 'Search', path: '/search', icon: <Search className="w-5 h-5" /> },
     { name: 'Notifications', path: '/notifications', icon: <Bell className="w-5 h-5" /> },
     { name: 'My Trip Planning', path: '/my-plans', icon: <BookOpen className="w-5 h-5" /> },
-    { name: 'Chat Room', path: '/chat', icon: <MessageSquare className="w-5 h-5" /> }, // Added chat link
+    { name: 'Chat Room', path: '/chat', icon: <MessageSquare className="w-5 h-5" /> },
+    { name: 'Quizzes', path: '/quizzes', icon: <ClipboardList className="w-5 h-5" /> }, // Added quizzes link
   ];
 
   return (
